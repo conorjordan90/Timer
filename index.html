@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #000000;
+        }
+        
+        .timer-container {
+            background: #000000;
+            padding: 60px;
+            border-radius: 0;
+            box-shadow: none;
+            text-align: center;
+        }
+        
+        .timer-display {
+            font-size: 140px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 50px;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 18px 40px;
+            font-size: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 140px;
+            background: transparent;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .start-btn {
+            border-color: #10b981;
+            color: #10b981;
+        }
+        
+        .start-btn:hover {
+            background: #10b981;
+            color: #000000;
+            transform: scale(1.05);
+        }
+        
+        .stop-btn {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        
+        .stop-btn:hover {
+            background: #ef4444;
+            color: #000000;
+            transform: scale(1.05);
+        }
+        
+        .reset-btn {
+            border-color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a1a1a;
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-content h2 {
+            color: #ffffff;
+            margin: 0 0 30px 0;
+            font-size: 28px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: #000000;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: #666666;
+            opacity: 1;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .form-actions button {
+            flex: 1;
+            padding: 15px;
+            font-size: 14px;
+        }
+        
+        .info-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <div class="timer-display" id="display">00:00:00</div>
+        <div class="controls">
+            <button class="start-btn" id="startBtn">Start</button>
+            <button class="stop-btn" id="stopBtn" disabled>Stop</button>
+            <button class="reset-btn" id="resetBtn">Reset</button>
+        </div>
+    </div>
+
+    <div class="modal" id="dataModal">
+        <div class="modal-content">
+            <h2>Log Time Entry</h2>
+            <form id="timeEntryForm">
+                <div class="form-group">
+                    <label>Staff Name *</label>
+                    <select id="staffName" required>
+                        <option value="">Select staff member</option>
+                        <option value="Rob">Rob</option>
+                        <option value="Coner">Coner</option>
+                        <option value="Rose">Rose</option>
+                        <option value="Conor">Conor</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Job *</label>
+                    <input type="text" id="job" placeholder="Enter job name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Location *</label>
+                    <input type="text" id="location" placeholder="Enter location" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="date" placeholder="Select date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="description" placeholder="Enter additional notes (optional)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <div class="info-text">Duration: <span id="modalDuration"></span></div>
+                    <div class="info-text">Cost: £<span id="modalCost"></span></div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="reset-btn" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="start-btn">Save & Export</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class Timer {
+            constructor() {
+                this.startTime = 0;
+                this.elapsedTime = 0;
+                this.timerInterval = null;
+                this.isRunning = false;
+                this.sessionStartTime = null;
+                this.sessionEndTime = null;
+                this.timeEntries = [];
+                
+                this.display = document.getElementById('display');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.modal = document.getElementById('dataModal');
+                this.form = document.getElementById('timeEntryForm');
+                this.cancelBtn = document.getElementById('cancelBtn');
+                
+                // Set today's date as default
+                document.getElementById('date').valueAsDate = new Date();
+                
+                this.attachEventListeners();
+            }
+            
+            attachEventListeners() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.stopBtn.addEventListener('click', () => this.stop());
+                this.resetBtn.addEventListener('click', () => this.reset());
+                this.cancelBtn.addEventListener('click', () => this.closeModal());
+                this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+            }
+            
+            start() {
+                if (!this.isRunning) {
+                    this.startTime = Date.now() - this.elapsedTime;
+                    if (this.elapsedTime === 0) {
+                        this.sessionStartTime = new Date();
+                    }
+                    this.timerInterval = setInterval(() => this.update(), 10);
+                    this.isRunning = true;
+                    
+                    this.startBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                }
+            }
+            
+            stop() {
+                if (this.isRunning) {
+                    clearInterval(this.timerInterval);
+                    this.isRunning = false;
+                    this.sessionEndTime = new Date();
+                    
+                    this.startBtn.disabled = false;
+                    this.stopBtn.disabled = true;
+                    
+                    // Show modal with calculated data
+                    this.showModal();
+                }
+            }
+            
+            reset() {
+                this.stop();
+                this.elapsedTime = 0;
+                this.display.textContent = '00:00:00';
+            }
+            
+            update() {
+                this.elapsedTime = Date.now() - this.startTime;
+                
+                const hours = Math.floor(this.elapsedTime / (1000 * 60 * 60));
+                const minutes = Math.floor((this.elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((this.elapsedTime % (1000 * 60)) / 1000);
+                
+                this.display.textContent = 
+                    `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
+            }
+            
+            pad(num) {
+                return num.toString().padStart(2, '0');
+            }
+            
+            showModal() {
+                const duration = this.formatDuration(this.elapsedTime);
+                const cost = this.calculateCost(this.elapsedTime);
+                
+                document.getElementById('modalDuration').textContent = duration;
+                document.getElementById('modalCost').textContent = cost.toFixed(2);
+                
+                this.modal.classList.add('active');
+            }
+            
+            closeModal() {
+                this.modal.classList.remove('active');
+                this.form.reset();
+                document.getElementById('date').valueAsDate = new Date();
+            }
+            
+            formatDuration(ms) {
+                const hours = Math.floor(ms / (1000 * 60 * 60));
+                const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+                return `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
+            }
+            
+            calculateCost(ms) {
+                const hours = ms / (1000 * 60 * 60);
+                return hours * 33;
+            }
+            
+            formatTime(date) {
+                return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+            
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                
+                const entry = {
+                    staffName: document.getElementById('staffName').value,
+                    job: document.getElementById('job').value,
+                    location: document.getElementById('location').value,
+                    date: document.getElementById('date').value,
+                    description: document.getElementById('description').value,
+                    startTime: this.formatTime(this.sessionStartTime),
+                    endTime: this.formatTime(this.sessionEndTime),
+                    duration: this.formatDuration(this.elapsedTime),
+                    totalCost: this.calculateCost(this.elapsedTime).toFixed(2)
+                };
+                
+                this.timeEntries.push(entry);
+                await this.sendToLocalServer(entry);
+                // CSV export removed - data goes directly to master spreadsheet
+                this.closeModal();
+                this.reset();
+            }
+
+            async sendToLocalServer(entry) {
+                const url = 'http://127.0.0.1:3000/log';
+                try {
+                    await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(entry)
+                    });
+                } catch (err) {
+                    console.error('Local logging failed', err);
+                }
+            }
+            
+            exportToCSV() {
+                const headers = ['Staff Name', 'Job', 'Location', 'Date', 'Start Time', 'End Time', 'Duration', 'Total Cost (£)', 'Description'];
+                
+                let csv = headers.join(',') + '\n';
+                
+                this.timeEntries.forEach(entry => {
+                    // Convert date from YYYY-MM-DD to D/M/Y
+                    const dateParts = entry.date.split('-');
+                    const formattedDate = `${parseInt(dateParts[2])}/${parseInt(dateParts[1])}/${dateParts[0]}`;
+                    
+                    const row = [
+                        entry.staffName,
+                        `"${entry.job}"`,
+                        `"${entry.location}"`,
+                        formattedDate,
+                        entry.startTime,
+                        entry.endTime,
+                        entry.duration,
+                        entry.totalCost,
+                        `"${entry.description}"`
+                    ];
+                    csv += row.join(',') + '\n';
+                });
+                
+                // Create and download CSV file
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `time_entries_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }
+        }
+        
+        // Initialize timer
+        const timer = new Timer();
+    </script>
+</body>
+</html>
