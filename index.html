@@ -251,7 +251,7 @@
     </div>
 
     <script>
-        const WEBHOOK_URL = '';
+        const WEBHOOK_URL = 'https://defaulta04816bbcd594af5b04bb7bf77c192.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d68a6c1756ba4a6fbded2290bc206559/triggers/manual/paths/invoke?api-version=1';
         class Timer {
             constructor() {
                 this.startTime = 0;
@@ -390,12 +390,22 @@
 
             async sendToEndpoint(entry) {
                 const url = WEBHOOK_URL || 'http://127.0.0.1:3000/log';
+                const isPowerAutomate = WEBHOOK_URL && WEBHOOK_URL.includes('/powerautomate/');
                 try {
-                    await fetch(url, {
+                    const options = isPowerAutomate ? {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                        body: JSON.stringify(entry)
+                    } : {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(entry)
-                    });
+                    };
+                    const res = await fetch(url, options);
+                    if (!isPowerAutomate && !res.ok) {
+                        throw new Error('Network response was not ok');
+                    }
                 } catch (err) {
                     console.error('Submit failed', err);
                 }
