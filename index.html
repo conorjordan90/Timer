@@ -251,6 +251,7 @@
     </div>
 
     <script>
+        const WEBHOOK_URL = '';
         class Timer {
             constructor() {
                 this.startTime = 0;
@@ -381,14 +382,14 @@
                 };
                 
                 this.timeEntries.push(entry);
-                await this.sendToLocalServer(entry);
+                await this.sendToEndpoint(entry);
                 // CSV export removed - data goes directly to master spreadsheet
                 this.closeModal();
                 this.reset();
             }
 
-            async sendToLocalServer(entry) {
-                const url = 'http://127.0.0.1:3000/log';
+            async sendToEndpoint(entry) {
+                const url = WEBHOOK_URL || 'http://127.0.0.1:3000/log';
                 try {
                     await fetch(url, {
                         method: 'POST',
@@ -396,7 +397,7 @@
                         body: JSON.stringify(entry)
                     });
                 } catch (err) {
-                    console.error('Local logging failed', err);
+                    console.error('Submit failed', err);
                 }
             }
             
