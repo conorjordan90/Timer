@@ -218,6 +218,11 @@
                 </div>
                 
                 <div class="form-group">
+                    <label>Job Number *</label>
+                    <input type="text" id="jobNumber" placeholder="Enter job number" required>
+                </div>
+                
+                <div class="form-group">
                     <label>Location *</label>
                     <input type="text" id="location" placeholder="Enter location" required>
                 </div>
@@ -365,6 +370,7 @@
                 const entry = {
                     staffName: document.getElementById('staffName').value,
                     job: document.getElementById('job').value,
+                    jobNumber: document.getElementById('jobNumber').value,
                     location: document.getElementById('location').value,
                     date: document.getElementById('date').value,
                     description: document.getElementById('description').value,
