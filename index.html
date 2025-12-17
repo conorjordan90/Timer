@@ -574,7 +574,9 @@
             
             calculateCost(ms) {
                 const hours = ms / (1000 * 60 * 60);
-                return hours * 33;
+                const cost = hours * 33;
+                // Always round up to nearest penny
+                return Math.ceil(cost * 100) / 100;
             }
             
             formatTime(date) {
