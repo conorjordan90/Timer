@@ -586,12 +586,17 @@
             async handleFormSubmit(e) {
                 e.preventDefault();
                 
+                // Format date to UK format (DD/MM/YYYY)
+                const dateInput = document.getElementById('date').value;
+                const dateParts = dateInput.split('-');
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                
                 const entry = {
                     staffName: document.getElementById('staffName').value,
                     job: document.getElementById('job').value,
                     jobNumber: document.getElementById('jobNumber').value,
                     location: document.getElementById('location').value,
-                    date: document.getElementById('date').value,
+                    date: formattedDate,
                     description: document.getElementById('description').value,
                     startTime: this.formatTime(this.sessionStartTime),
                     endTime: this.formatTime(this.sessionEndTime),
