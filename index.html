@@ -125,6 +125,18 @@
             max-height: 90vh;
             overflow-y: auto;
         }
+
+        .confirm-content {
+            max-width: 320px;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
         
         .modal-content h2 {
             color: #ffffff;
@@ -310,6 +322,17 @@
         </div>
     </div>
 
+    <div class="modal" id="resetConfirm">
+        <div class="modal-content confirm-content">
+            <h2>Reset timer?</h2>
+            <p class="info-text" style="text-align:center;">This will clear the current time.</p>
+            <div class="confirm-actions">
+                <button class="reset-btn" id="resetCancelBtn" type="button">Cancel</button>
+                <button class="stop-btn" id="resetConfirmBtn" type="button">Yes, reset</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const WEBHOOK_URL = 'https://defaulta04816bbcd594af5b04bb7bf77c192.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d68a6c1756ba4a6fbded2290bc206559/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y1FsutxAQQ9DLtBQsexWGReWwqVUECnkQZCJcNd44pI';
         class Timer {
@@ -318,6 +341,7 @@
                 this.elapsedTime = 0;
                 this.timerInterval = null;
                 this.isRunning = false;
+                this.wasRunningBeforeReset = false;
                 this.sessionStartTime = null;
                 this.sessionEndTime = null;
                 this.timeEntries = [];
@@ -327,8 +351,11 @@
                 this.stopBtn = document.getElementById('stopBtn');
                 this.resetBtn = document.getElementById('resetBtn');
                 this.modal = document.getElementById('dataModal');
+                this.resetModal = document.getElementById('resetConfirm');
                 this.form = document.getElementById('timeEntryForm');
                 this.cancelBtn = document.getElementById('cancelBtn');
+                this.resetCancelBtn = document.getElementById('resetCancelBtn');
+                this.resetConfirmBtn = document.getElementById('resetConfirmBtn');
                 
                 // Set today's date as default
                 document.getElementById('date').valueAsDate = new Date();
@@ -339,9 +366,11 @@
             attachEventListeners() {
                 this.startBtn.addEventListener('click', () => this.start());
                 this.stopBtn.addEventListener('click', () => this.stop());
-                this.resetBtn.addEventListener('click', () => this.reset());
+                this.resetBtn.addEventListener('click', () => this.requestReset());
                 this.cancelBtn.addEventListener('click', () => this.closeModal());
                 this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
+                this.resetCancelBtn.addEventListener('click', () => this.cancelReset());
+                this.resetConfirmBtn.addEventListener('click', () => this.confirmReset());
             }
             
             start() {
@@ -372,10 +401,39 @@
                 }
             }
             
-            reset() {
-                this.stop();
+            requestReset() {
+                if (this.elapsedTime === 0 && !this.isRunning) {
+                    return; // nothing to reset
+                }
+                this.wasRunningBeforeReset = this.isRunning;
+                if (this.isRunning) {
+                    clearInterval(this.timerInterval);
+                    this.isRunning = false;
+                }
+                this.resetModal.classList.add('active');
+            }
+
+            cancelReset() {
+                this.resetModal.classList.remove('active');
+                if (this.wasRunningBeforeReset) {
+                    this.startTime = Date.now() - this.elapsedTime;
+                    this.timerInterval = setInterval(() => this.update(), 10);
+                    this.isRunning = true;
+                    this.startBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                }
+            }
+
+            confirmReset() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.isRunning = false;
                 this.elapsedTime = 0;
+                this.sessionStartTime = null;
+                this.sessionEndTime = null;
                 this.display.textContent = '00:00:00';
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.resetModal.classList.remove('active');
             }
             
             update() {
