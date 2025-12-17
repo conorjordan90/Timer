@@ -217,6 +217,55 @@
             font-size: 12px;
             margin-top: 5px;
         }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .toast.success {
+            background: #10b981;
+            color: #000000;
+        }
+        
+        .toast.error {
+            background: #ef4444;
+            color: #ffffff;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        .toast.hide {
+            animation: slideOut 0.3s ease-out forwards;
+        }
 
         @media (max-width: 480px) {
             body {
@@ -560,17 +609,51 @@
             async sendToEndpoint(entry) {
                 const url = WEBHOOK_URL || 'http://127.0.0.1:3000/log';
                 try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    
                     const res = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(entry)
+                        body: JSON.stringify(entry),
+                        signal: controller.signal
                     });
-                    if (!res.ok && !WEBHOOK_URL) {
-                        throw new Error('Network response was not ok');
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (res.ok) {
+                        this.showToast('✓ Entry saved successfully', 'success');
+                    } else if (res.status === 400) {
+                        this.showToast('ERR_BAD_REQUEST: Check form fields', 'error');
+                    } else if (res.status === 401) {
+                        this.showToast('ERR_UNAUTHORIZED: Permission denied', 'error');
+                    } else if (res.status === 500) {
+                        this.showToast('ERR_SERVER: Server error, try again', 'error');
+                    } else {
+                        this.showToast(`ERR_HTTP_${res.status}: Failed to save`, 'error');
                     }
                 } catch (err) {
+                    if (err.name === 'AbortError') {
+                        this.showToast('ERR_TIMEOUT: Request took too long', 'error');
+                    } else if (err instanceof TypeError) {
+                        this.showToast('ERR_NETWORK: Check your connection', 'error');
+                    } else {
+                        this.showToast(`ERR_UNKNOWN: ${err.message || 'Unknown error'}`, 'error');
+                    }
                     console.error('Submit failed', err);
                 }
+            }
+            
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.classList.add('hide');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
             }
             
             exportToCSV() {
