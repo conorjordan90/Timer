@@ -8,7 +8,8 @@
     <style>
         html, body {
             height: 100%;
-            overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -195,10 +196,11 @@
 
         @media (max-width: 480px) {
             body {
-                padding: 0;
+                padding: 12px;
                 align-items: center;
                 justify-content: center;
-                min-height: 100vh;
+                min-height: 100svh;
+                overflow-x: hidden;
             }
             .timer-container {
                 padding: 24px 18px;
