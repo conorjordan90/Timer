@@ -459,6 +459,7 @@
                 document.getElementById('date').valueAsDate = new Date();
                 
                 this.attachEventListeners();
+                this.retryPendingEntries();
             }
             
             attachEventListeners() {
@@ -605,10 +606,12 @@
                 };
                 
                 this.timeEntries.push(entry);
-                await this.sendToEndpoint(entry);
+                const success = await this.sendToEndpoint(entry);
                 // CSV export removed - data goes directly to master spreadsheet
-                this.closeModal();
-                this.reset();
+                if (success) {
+                    this.closeModal();
+                    this.reset();
+                }
             }
 
             async sendToEndpoint(entry) {
@@ -628,24 +631,69 @@
                     
                     if (res.ok) {
                         this.showToast('✓ Entry saved successfully', 'success');
+                        return true;
                     } else if (res.status === 400) {
                         this.showToast('ERR_BAD_REQUEST: Check form fields', 'error');
+                        return false;
                     } else if (res.status === 401) {
                         this.showToast('ERR_UNAUTHORIZED: Permission denied', 'error');
+                        return false;
                     } else if (res.status === 500) {
                         this.showToast('ERR_SERVER: Server error, try again', 'error');
+                        return false;
                     } else {
                         this.showToast(`ERR_HTTP_${res.status}: Failed to save`, 'error');
+                        return false;
                     }
                 } catch (err) {
+                    // Save to local storage when network fails
+                    this.savePendingEntry(entry);
+                    
                     if (err.name === 'AbortError') {
-                        this.showToast('ERR_TIMEOUT: Request took too long', 'error');
+                        this.showToast('No connection - saved locally. Will sync when you reopen with internet.', 'error');
                     } else if (err instanceof TypeError) {
-                        this.showToast('ERR_NETWORK: Check your connection', 'error');
+                        this.showToast('No connection - saved locally. Will sync when you reopen with internet.', 'error');
                     } else {
-                        this.showToast(`ERR_UNKNOWN: ${err.message || 'Unknown error'}`, 'error');
+                        this.showToast('Error - saved locally. Will sync when you reopen with internet.', 'error');
                     }
-                    console.error('Submit failed', err);
+                    console.error('Submit failed, saved locally', err);
+                    return false;
+                }
+            }
+            
+            savePendingEntry(entry) {
+                const pending = JSON.parse(localStorage.getItem('pendingEntries') || '[]');
+                pending.push(entry);
+                localStorage.setItem('pendingEntries', JSON.stringify(pending));
+            }
+            
+            async retryPendingEntries() {
+                const pending = JSON.parse(localStorage.getItem('pendingEntries') || '[]');
+                if (pending.length === 0) return;
+                
+                const stillPending = [];
+                for (const entry of pending) {
+                    const url = WEBHOOK_URL || 'http://127.0.0.1:3000/log';
+                    try {
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(entry)
+                        });
+                        
+                        if (!res.ok) {
+                            stillPending.push(entry);
+                        }
+                    } catch (err) {
+                        stillPending.push(entry);
+                    }
+                }
+                
+                localStorage.setItem('pendingEntries', JSON.stringify(stillPending));
+                
+                const synced = pending.length - stillPending.length;
+                if (synced > 0) {
+                    this.showToast(`✓ Synced ${synced} pending ${synced === 1 ? 'entry' : 'entries'}`, 'success');
                 }
             }
             
