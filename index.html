@@ -773,8 +773,10 @@
             }
         }
         
-        // Initialize timer
-        const timer = new Timer();
+        // Initialize timer after DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.timer = new Timer();
+        });
 
         // Register service worker for installability/app icon support
         // if ('serviceWorker' in navigator) {
