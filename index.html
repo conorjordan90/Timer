@@ -86,13 +86,13 @@
         }
         
         .reset-btn {
-            border-color: rgba(255, 255, 255, 0.5);
-            color: rgba(255, 255, 255, 0.7);
+            border-color: #3b82f6;
+            color: #3b82f6;
         }
         
         .reset-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
+            background: #3b82f6;
+            color: #000000;
             transform: scale(1.05);
         }
         
@@ -325,8 +325,6 @@
                 width: 100% !important;
                 box-sizing: border-box !important;
                 max-width: 100% !important;
-                -webkit-appearance: none;
-                appearance: none;
             }
             .form-group textarea {
                 min-height: 60px;
@@ -362,6 +360,7 @@
 <body>
     <div class="timer-container">
         <div class="timer-display" id="display">00:00:00</div>
+            <div style="font-size: 60px; font-weight: bold; color: #fff; margin-bottom: 20px;">Text</div>
         <div class="controls">
             <button class="start-btn" id="startBtn">Start</button>
             <button class="stop-btn" id="stopBtn" disabled>Stop</button>
@@ -461,6 +460,7 @@
                 document.getElementById('date').valueAsDate = new Date();
                 
                 this.attachEventListeners();
+                this.retryPendingEntries();
             }
             
             attachEventListeners() {
@@ -576,7 +576,9 @@
             
             calculateCost(ms) {
                 const hours = ms / (1000 * 60 * 60);
-                return hours * 33;
+                const cost = hours * 33;
+                // Always round up to nearest penny
+                return Math.ceil(cost * 100) / 100;
             }
             
             formatTime(date) {
@@ -605,10 +607,12 @@
                 };
                 
                 this.timeEntries.push(entry);
-                await this.sendToEndpoint(entry);
+                const success = await this.sendToEndpoint(entry);
                 // CSV export removed - data goes directly to master spreadsheet
-                this.closeModal();
-                this.reset();
+                if (success) {
+                    this.closeModal();
+                    this.reset();
+                }
             }
 
             async sendToEndpoint(entry) {
@@ -628,24 +632,69 @@
                     
                     if (res.ok) {
                         this.showToast('✓ Entry saved successfully', 'success');
+                        return true;
                     } else if (res.status === 400) {
                         this.showToast('ERR_BAD_REQUEST: Check form fields', 'error');
+                        return false;
                     } else if (res.status === 401) {
                         this.showToast('ERR_UNAUTHORIZED: Permission denied', 'error');
+                        return false;
                     } else if (res.status === 500) {
                         this.showToast('ERR_SERVER: Server error, try again', 'error');
+                        return false;
                     } else {
                         this.showToast(`ERR_HTTP_${res.status}: Failed to save`, 'error');
+                        return false;
                     }
                 } catch (err) {
+                    // Save to local storage when network fails
+                    this.savePendingEntry(entry);
+                    
                     if (err.name === 'AbortError') {
-                        this.showToast('ERR_TIMEOUT: Request took too long', 'error');
+                        this.showToast('No connection - saved locally. Will sync when you reopen with internet.', 'error');
                     } else if (err instanceof TypeError) {
-                        this.showToast('ERR_NETWORK: Check your connection', 'error');
+                        this.showToast('No connection - saved locally. Will sync when you reopen with internet.', 'error');
                     } else {
-                        this.showToast(`ERR_UNKNOWN: ${err.message || 'Unknown error'}`, 'error');
+                        this.showToast('Error - saved locally. Will sync when you reopen with internet.', 'error');
                     }
-                    console.error('Submit failed', err);
+                    console.error('Submit failed, saved locally', err);
+                    return false;
+                }
+            }
+            
+            savePendingEntry(entry) {
+                const pending = JSON.parse(localStorage.getItem('pendingEntries') || '[]');
+                pending.push(entry);
+                localStorage.setItem('pendingEntries', JSON.stringify(pending));
+            }
+            
+            async retryPendingEntries() {
+                const pending = JSON.parse(localStorage.getItem('pendingEntries') || '[]');
+                if (pending.length === 0) return;
+                
+                const stillPending = [];
+                for (const entry of pending) {
+                    const url = WEBHOOK_URL || 'http://127.0.0.1:3000/log';
+                    try {
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(entry)
+                        });
+                        
+                        if (!res.ok) {
+                            stillPending.push(entry);
+                        }
+                    } catch (err) {
+                        stillPending.push(entry);
+                    }
+                }
+                
+                localStorage.setItem('pendingEntries', JSON.stringify(stillPending));
+                
+                const synced = pending.length - stillPending.length;
+                if (synced > 0) {
+                    this.showToast(`✓ Synced ${synced} pending ${synced === 1 ? 'entry' : 'entries'}`, 'success');
                 }
             }
             
@@ -707,6 +756,16 @@
                 navigator.serviceWorker.register('sw.js').catch(() => {});
             });
         }
+            // Request persistent storage to reduce risk of cache/data being cleared
+            if (navigator.storage && navigator.storage.persist) {
+                navigator.storage.persist().then(persistent => {
+                    if (persistent) {
+                        console.log('Storage will not be cleared except by explicit user action');
+                    } else {
+                        console.log('Storage may be cleared by the browser under storage pressure');
+                    }
+                });
+            }
     </script>
 </body>
 </html>
