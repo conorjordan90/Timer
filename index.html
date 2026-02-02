@@ -364,6 +364,7 @@
             <button class="start-btn" id="startBtn">Start</button>
             <button class="stop-btn" id="stopBtn" disabled>Stop</button>
             <button class="reset-btn" id="resetBtn">Reset</button>
+            <button class="manual-btn" id="manualEntryBtn">Manual Entry</button>
         </div>
     </div>
 
@@ -400,6 +401,14 @@
                 <div class="form-group">
                     <label>Date *</label>
                     <input type="date" id="date" placeholder="Select date" required>
+                </div>
+                <div class="form-group manual-only" style="display:none;">
+                    <label>Start Time *</label>
+                    <input type="time" id="manualStartTime" step="1">
+                </div>
+                <div class="form-group manual-only" style="display:none;">
+                    <label>End Time *</label>
+                    <input type="time" id="manualEndTime" step="1">
                 </div>
                 
                 <div class="form-group">
@@ -585,7 +594,20 @@
             }
             
             async handleFormSubmit(e) {
+                // Manual Entry button logic
+                const manualEntryBtn = document.getElementById('manualEntryBtn');
+                manualEntryBtn.addEventListener('click', () => this.showManualEntry());
                 e.preventDefault();
+    
+            showManualEntry() {
+                // Show modal and manual fields
+                this.modal.classList.add('active');
+                document.querySelectorAll('.manual-only').forEach(el => el.style.display = 'block');
+                // Reset form and clear duration/cost
+                this.form.reset();
+                document.getElementById('modalDuration').textContent = '';
+                document.getElementById('modalCost').textContent = '';
+            }
                 
                 // Format date to UK format (DD/MM/YYYY)
                 const dateInput = document.getElementById('date').value;
@@ -642,6 +664,8 @@
                         this.showToast('ERR_SERVER: Server error, try again', 'error');
                         return false;
                     } else {
+                // Hide manual fields
+                document.querySelectorAll('.manual-only').forEach(el => el.style.display = 'none');
                         this.showToast(`ERR_HTTP_${res.status}: Failed to save`, 'error');
                         return false;
                     }
