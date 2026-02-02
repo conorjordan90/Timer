@@ -409,6 +409,14 @@
                     <label>Description</label>
                     <textarea id="description" placeholder="Enter additional notes (optional)"></textarea>
                 </div>
+                <div class="form-group manual-only" style="display:none;">
+                    <label>Time Started *</label>
+                    <input type="time" id="manualStartTime">
+                </div>
+                <div class="form-group manual-only" style="display:none;">
+                    <label>Time Finished *</label>
+                    <input type="time" id="manualEndTime">
+                </div>
                 
                 <div class="form-group">
                     <div class="info-text">Duration: <span id="modalDuration"></span></div>
@@ -437,6 +445,15 @@
     <script>
         const WEBHOOK_URL = 'https://defaulta04816bbcd594af5b04bb7bf77c192.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d68a6c1756ba4a6fbded2290bc206559/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y1FsutxAQQ9DLtBQsexWGReWwqVUECnkQZCJcNd44pI';
         class Timer {
+                        showManualEntry() {
+                            // Show modal and manual fields
+                            this.modal.classList.add('active');
+                            document.querySelectorAll('.manual-only').forEach(el => el.style.display = 'block');
+                            // Reset form and clear duration/cost
+                            this.form.reset();
+                            document.getElementById('modalDuration').textContent = '';
+                            document.getElementById('modalCost').textContent = '';
+                        }
             constructor() {
                 this.startTime = 0;
                 this.elapsedTime = 0;
@@ -473,6 +490,9 @@
                 this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
                 this.resetCancelBtn.addEventListener('click', () => this.cancelReset());
                 this.resetConfirmBtn.addEventListener('click', () => this.confirmReset());
+                // Manual Entry button logic
+                const manualEntryBtn = document.getElementById('manualEntryBtn');
+                manualEntryBtn.addEventListener('click', () => this.showManualEntry());
             }
             
             start() {
