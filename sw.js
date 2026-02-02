@@ -36,18 +36,18 @@ self.addEventListener('activate', (e) => {
 // Serve from cache when offline, fetch from network when online
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    fetch(e.request)
-      .then((response) => {
-        // Clone response and update cache
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(e.request, responseClone);
+    caches.match(e.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(e.request)
+        .then((networkResponse) => {
+          // Optionally cache new requests here if desired
+          return networkResponse;
+        })
+        .catch(() => {
+          // Optionally return a fallback page or asset
         });
-        return response;
-      })
-      .catch(() => {
-        // Network failed, try cache
-        return caches.match(e.request);
-      })
+    })
   );
 });
