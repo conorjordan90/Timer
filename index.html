@@ -609,12 +609,30 @@
             
             async handleFormSubmit(e) {
                 e.preventDefault();
-                
                 // Format date to UK format (DD/MM/YYYY)
                 const dateInput = document.getElementById('date').value;
                 const dateParts = dateInput.split('-');
                 const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-                
+
+                // Check if manual fields are visible and filled
+                const manualStart = document.getElementById('manualStartTime');
+                const manualEnd = document.getElementById('manualEndTime');
+                let startTimeStr, endTimeStr, durationMs;
+                if (manualStart && manualEnd && manualStart.offsetParent !== null && manualStart.value && manualEnd.value) {
+                    // Manual entry mode
+                    startTimeStr = manualStart.value;
+                    endTimeStr = manualEnd.value;
+                    // Parse times
+                    const startDate = new Date(`${dateInput}T${startTimeStr}`);
+                    const endDate = new Date(`${dateInput}T${endTimeStr}`);
+                    durationMs = endDate - startDate;
+                } else {
+                    // Timer mode
+                    startTimeStr = this.formatTime(this.sessionStartTime);
+                    endTimeStr = this.formatTime(this.sessionEndTime);
+                    durationMs = this.elapsedTime;
+                }
+
                 const entry = {
                     staffName: document.getElementById('staffName').value,
                     job: document.getElementById('job').value,
@@ -622,12 +640,12 @@
                     location: document.getElementById('location').value,
                     date: formattedDate,
                     description: document.getElementById('description').value,
-                    startTime: this.formatTime(this.sessionStartTime),
-                    endTime: this.formatTime(this.sessionEndTime),
-                    duration: this.formatDuration(this.elapsedTime),
-                    totalCost: this.calculateCost(this.elapsedTime).toFixed(2)
+                    startTime: startTimeStr,
+                    endTime: endTimeStr,
+                    duration: this.formatDuration(durationMs),
+                    totalCost: this.calculateCost(durationMs).toFixed(2)
                 };
-                
+
                 this.timeEntries.push(entry);
                 const success = await this.sendToEndpoint(entry);
                 // CSV export removed - data goes directly to master spreadsheet
