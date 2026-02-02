@@ -479,6 +479,9 @@
                 this.form.addEventListener('submit', (e) => this.handleFormSubmit(e));
                 this.resetCancelBtn.addEventListener('click', () => this.cancelReset());
                 this.resetConfirmBtn.addEventListener('click', () => this.confirmReset());
+                // Manual Entry button logic
+                const manualEntryBtn = document.getElementById('manualEntryBtn');
+                manualEntryBtn.addEventListener('click', () => this.showManualEntry());
             }
             
             start() {
