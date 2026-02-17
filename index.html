@@ -102,6 +102,18 @@
             transform: none !important;
         }
         
+        .manual-btn {
+            padding: 14px 32px;
+            font-size: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            background: transparent;
+            color: #ffffff;
+            min-width: 180px;
+        }
+        
         .modal {
             display: none;
             position: fixed;
@@ -377,7 +389,7 @@
             <button class="reset-btn" id="resetBtn">Reset</button>
         </div>
         <div style="display: flex; justify-content: center; margin-top: 18px;">
-            <button class="manual-btn" id="manualEntryBtn" style="padding: 14px 32px; font-size: 15px; border: 2px solid rgba(255,255,255,0.2); border-radius: 50px; cursor: pointer; font-weight: 600; background: transparent; color: #fff; min-width: 180px;">Manual Entry</button>
+            <button class="manual-btn" id="manualEntryBtn">Manual Entry</button>
         </div>
     </div>
 
@@ -454,25 +466,12 @@
     </div>
 
     <script>
-            // Calendar icon click focuses the date input to trigger native picker
-            document.addEventListener('DOMContentLoaded', function() {
-                var calendarIcon = document.getElementById('calendarIcon');
-                var dateInput = document.getElementById('date');
-                if (calendarIcon && dateInput) {
-                    calendarIcon.addEventListener('click', function(e) {
-                        dateInput.focus();
-                        // On some mobile browsers, programmatic focus may not open the picker,
-                        // but this is the best available approach for now.
-                    });
-                    calendarIcon.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            dateInput.focus();
-                        }
-                    });
-                }
-            });
+        // Constants
         const WEBHOOK_URL = 'https://defaulta04816bbcd594af5b04bb7bf77c192.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d68a6c1756ba4a6fbded2290bc206559/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y1FsutxAQQ9DLtBQsexWGReWwqVUECnkQZCJcNd44pI';
+        const TIMER_UPDATE_INTERVAL = 10; // milliseconds
+        const FETCH_TIMEOUT = 10000; // milliseconds
+        const HOURLY_RATE = 33; // cost per hour
+        const TOAST_DURATION = 3000; // milliseconds
         class Timer {
         // Save timer state to localStorage
         saveState() {
@@ -547,7 +546,7 @@
                 if (this.elapsedTime === 0) {
                     this.sessionStartTime = new Date();
                 }
-                this.timerInterval = setInterval(() => this.update(), 10);
+                this.timerInterval = setInterval(() => this.update(), TIMER_UPDATE_INTERVAL);
                 this.isRunning = true;
                 this.startBtn.disabled = true;
                 this.stopBtn.disabled = false;
@@ -584,7 +583,7 @@
                 this.resetModal.classList.remove('active');
                 if (this.wasRunningBeforeReset) {
                     this.startTime = Date.now() - this.elapsedTime;
-                    this.timerInterval = setInterval(() => this.update(), 10);
+                    this.timerInterval = setInterval(() => this.update(), TIMER_UPDATE_INTERVAL);
                     this.isRunning = true;
                     this.startBtn.disabled = true;
                     this.stopBtn.disabled = false;
@@ -656,7 +655,7 @@
             
             calculateCost(ms) {
                 const hours = ms / (1000 * 60 * 60);
-                const cost = hours * 33;
+                const cost = hours * HOURLY_RATE;
                 // Always round up to nearest penny
                 return Math.ceil(cost * 100) / 100;
             }
@@ -717,7 +716,7 @@
                 const url = WEBHOOK_URL || 'http://127.0.0.1:3000/log';
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
                     
                     const res = await fetch(url, {
                         method: 'POST',
@@ -805,7 +804,7 @@
                 setTimeout(() => {
                     toast.classList.add('hide');
                     setTimeout(() => toast.remove(), 300);
-                }, 3000);
+                }, TOAST_DURATION);
             }
             
             exportToCSV() {
@@ -870,7 +869,7 @@
             timer.elapsedTime = newElapsed;
             timer.isRunning = true;
             timer.sessionStartTime = saved.sessionStartTime ? new Date(saved.sessionStartTime) : new Date(saved.startTime);
-            timer.timerInterval = setInterval(() => timer.update(), 10);
+            timer.timerInterval = setInterval(() => timer.update(), TIMER_UPDATE_INTERVAL);
             timer.startBtn.disabled = true;
             timer.stopBtn.disabled = false;
             timer.saveState();
@@ -894,23 +893,6 @@
         }
 
         checkAndRestoreTimer();
-
-        // Save state on page hide/unload
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                const timerState = JSON.parse(localStorage.getItem('timerState') || 'null');
-                if (timerState && timerState.isRunning) {
-                    // Already saved by timer, but can force update if needed
-                    localStorage.setItem('timerState', JSON.stringify(timerState));
-                }
-            }
-        });
-        window.addEventListener('beforeunload', function() {
-            const timerState = JSON.parse(localStorage.getItem('timerState') || 'null');
-            if (timerState && timerState.isRunning) {
-                localStorage.setItem('timerState', JSON.stringify(timerState));
-            }
-        });
 
         // Register service worker for installability/app icon support
         if ('serviceWorker' in navigator) {
