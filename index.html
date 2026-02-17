@@ -358,6 +358,17 @@
     </style>
 </head>
 <body>
+        <!-- Recovery Modal -->
+        <div class="modal" id="recoveryModal">
+            <div class="modal-content confirm-content">
+                <h2>Timer Interrupted</h2>
+                <p class="info-text">The timer was interrupted. Would you like to continue from where you left off?</p>
+                <div class="confirm-actions">
+                    <button class="reset-btn" id="recoveryNoBtn" type="button">No, reset</button>
+                    <button class="start-btn" id="recoveryYesBtn" type="button">Yes, continue</button>
+                </div>
+            </div>
+        </div>
     <div class="timer-container">
         <div class="timer-display" id="display">00:00:00</div>
         <div class="controls">
@@ -463,6 +474,23 @@
             });
         const WEBHOOK_URL = 'https://defaulta04816bbcd594af5b04bb7bf77c192.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d68a6c1756ba4a6fbded2290bc206559/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y1FsutxAQQ9DLtBQsexWGReWwqVUECnkQZCJcNd44pI';
         class Timer {
+        // Save timer state to localStorage
+        saveState() {
+            const state = {
+                startTime: this.startTime,
+                elapsedTime: this.elapsedTime,
+                isRunning: this.isRunning,
+                lastSaved: Date.now(),
+                sessionStartTime: this.sessionStartTime ? this.sessionStartTime.toISOString() : null,
+                sessionEndTime: this.sessionEndTime ? this.sessionEndTime.toISOString() : null
+            };
+            localStorage.setItem('timerState', JSON.stringify(state));
+        }
+
+        // Clear saved timer state
+        clearState() {
+            localStorage.removeItem('timerState');
+        }
                         showManualEntry() {
                             // Show modal and manual fields
                             this.modal.classList.add('active');
@@ -513,33 +541,32 @@
                 manualEntryBtn.addEventListener('click', () => this.showManualEntry());
             }
             
-            start() {
-                if (!this.isRunning) {
-                    this.startTime = Date.now() - this.elapsedTime;
-                    if (this.elapsedTime === 0) {
-                        this.sessionStartTime = new Date();
-                    }
-                    this.timerInterval = setInterval(() => this.update(), 10);
-                    this.isRunning = true;
-                    
-                    this.startBtn.disabled = true;
-                    this.stopBtn.disabled = false;
+        start() {
+            if (!this.isRunning) {
+                this.startTime = Date.now() - this.elapsedTime;
+                if (this.elapsedTime === 0) {
+                    this.sessionStartTime = new Date();
                 }
+                this.timerInterval = setInterval(() => this.update(), 10);
+                this.isRunning = true;
+                this.startBtn.disabled = true;
+                this.stopBtn.disabled = false;
+                this.saveState();
             }
+        }
             
-            stop() {
-                if (this.isRunning) {
-                    clearInterval(this.timerInterval);
-                    this.isRunning = false;
-                    this.sessionEndTime = new Date();
-                    
-                    this.startBtn.disabled = false;
-                    this.stopBtn.disabled = true;
-                    
-                    // Show modal with calculated data
-                    this.showModal();
-                }
+        stop() {
+            if (this.isRunning) {
+                clearInterval(this.timerInterval);
+                this.isRunning = false;
+                this.sessionEndTime = new Date();
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.saveState();
+                // Show modal with calculated data
+                this.showModal();
             }
+        }
             
             requestReset() {
                 if (this.elapsedTime === 0 && !this.isRunning) {
@@ -564,28 +591,28 @@
                 }
             }
 
-            confirmReset() {
-                if (this.timerInterval) clearInterval(this.timerInterval);
-                this.isRunning = false;
-                this.elapsedTime = 0;
-                this.sessionStartTime = null;
-                this.sessionEndTime = null;
-                this.display.textContent = '00:00:00';
-                this.startBtn.disabled = false;
-                this.stopBtn.disabled = true;
-                this.resetModal.classList.remove('active');
-            }
+        confirmReset() {
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            this.isRunning = false;
+            this.elapsedTime = 0;
+            this.sessionStartTime = null;
+            this.sessionEndTime = null;
+            this.display.textContent = '00:00:00';
+            this.startBtn.disabled = false;
+            this.stopBtn.disabled = true;
+            this.resetModal.classList.remove('active');
+            this.clearState();
+        }
             
-            update() {
-                this.elapsedTime = Date.now() - this.startTime;
-                
-                const hours = Math.floor(this.elapsedTime / (1000 * 60 * 60));
-                const minutes = Math.floor((this.elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((this.elapsedTime % (1000 * 60)) / 1000);
-                
-                this.display.textContent = 
-                    `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
-            }
+        update() {
+            this.elapsedTime = Date.now() - this.startTime;
+            this.saveState();
+            const hours = Math.floor(this.elapsedTime / (1000 * 60 * 60));
+            const minutes = Math.floor((this.elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((this.elapsedTime % (1000 * 60)) / 1000);
+            this.display.textContent = 
+                `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
+        }
             
             pad(num) {
                 return num.toString().padStart(2, '0');
@@ -605,6 +632,7 @@
                 this.modal.classList.remove('active');
                 this.form.reset();
                 document.getElementById('date').valueAsDate = new Date();
+                this.clearState();
             }
             
             formatDuration(ms) {
@@ -806,7 +834,75 @@
         }
         
         // Initialize timer
-        const timer = new Timer();
+
+        // Recovery logic
+        function showRecoveryModal(onYes, onNo) {
+            const modal = document.getElementById('recoveryModal');
+            modal.classList.add('active');
+            document.getElementById('recoveryYesBtn').onclick = function() {
+                modal.classList.remove('active');
+                onYes();
+            };
+            document.getElementById('recoveryNoBtn').onclick = function() {
+                modal.classList.remove('active');
+                onNo();
+            };
+        }
+
+        function restoreTimerFromState(saved) {
+            const now = Date.now();
+            const gap = now - saved.lastSaved;
+            const newElapsed = saved.elapsedTime + gap;
+            const timer = new Timer();
+            timer.startTime = now - newElapsed;
+            timer.elapsedTime = newElapsed;
+            timer.isRunning = true;
+            timer.sessionStartTime = saved.sessionStartTime ? new Date(saved.sessionStartTime) : new Date(saved.startTime);
+            timer.timerInterval = setInterval(() => timer.update(), 10);
+            timer.startBtn.disabled = true;
+            timer.stopBtn.disabled = false;
+            timer.saveState();
+        }
+
+        function resetAndNewTimer() {
+            localStorage.removeItem('timerState');
+            new Timer();
+        }
+
+        function checkAndRestoreTimer() {
+            const saved = JSON.parse(localStorage.getItem('timerState') || 'null');
+            if (saved && saved.isRunning) {
+                showRecoveryModal(
+                    function continueTimer() {
+                        restoreTimerFromState(saved);
+                    },
+                    function resetTimer() {
+                        resetAndNewTimer();
+                    }
+                );
+            } else {
+                new Timer();
+            }
+        }
+
+        checkAndRestoreTimer();
+
+        // Save state on page hide/unload
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                const timerState = JSON.parse(localStorage.getItem('timerState') || 'null');
+                if (timerState && timerState.isRunning) {
+                    // Already saved by timer, but can force update if needed
+                    localStorage.setItem('timerState', JSON.stringify(timerState));
+                }
+            }
+        });
+        window.addEventListener('beforeunload', function() {
+            const timerState = JSON.parse(localStorage.getItem('timerState') || 'null');
+            if (timerState && timerState.isRunning) {
+                localStorage.setItem('timerState', JSON.stringify(timerState));
+            }
+        });
 
         // Register service worker for installability/app icon support
         if ('serviceWorker' in navigator) {
