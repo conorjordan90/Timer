@@ -603,6 +603,18 @@
             this.resetModal.classList.remove('active');
             this.clearState();
         }
+
+        reset() {
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            this.isRunning = false;
+            this.elapsedTime = 0;
+            this.sessionStartTime = null;
+            this.sessionEndTime = null;
+            this.display.textContent = '00:00:00';
+            this.startBtn.disabled = false;
+            this.stopBtn.disabled = true;
+            this.clearState();
+        }
             
         update() {
             this.elapsedTime = Date.now() - this.startTime;
@@ -834,6 +846,7 @@
         }
         
         // Initialize timer
+        let timerInstance = null;
 
         // Recovery logic
         function showRecoveryModal(onYes, onNo) {
@@ -849,11 +862,10 @@
             };
         }
 
-        function restoreTimerFromState(saved) {
+        function restoreTimerFromState(timer, saved) {
             const now = Date.now();
             const gap = now - saved.lastSaved;
             const newElapsed = saved.elapsedTime + gap;
-            const timer = new Timer();
             timer.startTime = now - newElapsed;
             timer.elapsedTime = newElapsed;
             timer.isRunning = true;
@@ -864,24 +876,20 @@
             timer.saveState();
         }
 
-        function resetAndNewTimer() {
-            localStorage.removeItem('timerState');
-            new Timer();
-        }
-
         function checkAndRestoreTimer() {
             const saved = JSON.parse(localStorage.getItem('timerState') || 'null');
+            timerInstance = new Timer();
+            
             if (saved && saved.isRunning) {
                 showRecoveryModal(
                     function continueTimer() {
-                        restoreTimerFromState(saved);
+                        restoreTimerFromState(timerInstance, saved);
                     },
                     function resetTimer() {
-                        resetAndNewTimer();
+                        localStorage.removeItem('timerState');
+                        timerInstance.reset();
                     }
                 );
-            } else {
-                new Timer();
             }
         }
 
