@@ -112,6 +112,24 @@
             background: transparent;
             color: #ffffff;
             min-width: 180px;
+            transition: all 0.3s ease;
+        }
+        
+        .manual-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .button-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 18px;
+        }
+        
+        .button-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 18px;
         }
         
         .modal {
@@ -329,7 +347,7 @@
             .form-group select,
             .form-group textarea {
                 padding: 10px;
-                font-size: 14px;
+                font-size: 15px;
                 width: 100%;
                 box-sizing: border-box;
             }
@@ -346,25 +364,15 @@
                 margin-top: 3px;
             }
             .form-actions {
-                gap: 8px;
-                margin-top: 14px;
-            }
-            .form-actions button {
-                padding: 11px 10px;
-                font-size: 13px;
-            }
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                font-size: 15px;
-            }
-            .form-actions {
                 flex-direction: column;
                 gap: 10px;
+                margin-top: 14px;
             }
             .form-actions button {
                 width: 100%;
                 flex: none;
+                padding: 11px 10px;
+                font-size: 13px;
             }
         }
     </style>
@@ -388,7 +396,7 @@
             <button class="stop-btn" id="stopBtn" disabled>Stop</button>
             <button class="reset-btn" id="resetBtn">Reset</button>
         </div>
-        <div style="display: flex; justify-content: center; margin-top: 18px;">
+        <div class="button-wrapper">
             <button class="manual-btn" id="manualEntryBtn">Manual Entry</button>
         </div>
     </div>
@@ -472,33 +480,8 @@
         const FETCH_TIMEOUT = 10000; // milliseconds
         const HOURLY_RATE = 33; // cost per hour
         const TOAST_DURATION = 3000; // milliseconds
+        
         class Timer {
-        // Save timer state to localStorage
-        saveState() {
-            const state = {
-                startTime: this.startTime,
-                elapsedTime: this.elapsedTime,
-                isRunning: this.isRunning,
-                lastSaved: Date.now(),
-                sessionStartTime: this.sessionStartTime ? this.sessionStartTime.toISOString() : null,
-                sessionEndTime: this.sessionEndTime ? this.sessionEndTime.toISOString() : null
-            };
-            localStorage.setItem('timerState', JSON.stringify(state));
-        }
-
-        // Clear saved timer state
-        clearState() {
-            localStorage.removeItem('timerState');
-        }
-                        showManualEntry() {
-                            // Show modal and manual fields
-                            this.modal.classList.add('active');
-                            document.querySelectorAll('.manual-only').forEach(el => el.style.display = 'block');
-                            // Reset form and clear duration/cost
-                            this.form.reset();
-                            document.getElementById('modalDuration').textContent = '';
-                            document.getElementById('modalCost').textContent = '';
-                        }
             constructor() {
                 this.startTime = 0;
                 this.elapsedTime = 0;
@@ -525,6 +508,34 @@
                 
                 this.attachEventListeners();
                 this.retryPendingEntries();
+            }
+            
+            // Save timer state to localStorage
+            saveState() {
+                const state = {
+                    startTime: this.startTime,
+                    elapsedTime: this.elapsedTime,
+                    isRunning: this.isRunning,
+                    lastSaved: Date.now(),
+                    sessionStartTime: this.sessionStartTime ? this.sessionStartTime.toISOString() : null,
+                    sessionEndTime: this.sessionEndTime ? this.sessionEndTime.toISOString() : null
+                };
+                localStorage.setItem('timerState', JSON.stringify(state));
+            }
+
+            // Clear saved timer state
+            clearState() {
+                localStorage.removeItem('timerState');
+            }
+            
+            showManualEntry() {
+                // Show modal and manual fields
+                this.modal.classList.add('active');
+                document.querySelectorAll('.manual-only').forEach(el => el.style.display = 'block');
+                // Reset form and clear duration/cost
+                this.form.reset();
+                document.getElementById('modalDuration').textContent = '';
+                document.getElementById('modalCost').textContent = '';
             }
             
             attachEventListeners() {
@@ -805,42 +816,6 @@
                     toast.classList.add('hide');
                     setTimeout(() => toast.remove(), 300);
                 }, TOAST_DURATION);
-            }
-            
-            exportToCSV() {
-                const headers = ['Staff Name', 'Job', 'Location', 'Date', 'Start Time', 'End Time', 'Duration', 'Total Cost (£)', 'Description'];
-                
-                let csv = headers.join(',') + '\n';
-                
-                this.timeEntries.forEach(entry => {
-                    // Convert date from YYYY-MM-DD to D/M/Y
-                    const dateParts = entry.date.split('-');
-                    const formattedDate = `${parseInt(dateParts[2])}/${parseInt(dateParts[1])}/${dateParts[0]}`;
-                    
-                    const row = [
-                        entry.staffName,
-                        `"${entry.job}"`,
-                        `"${entry.location}"`,
-                        formattedDate,
-                        entry.startTime,
-                        entry.endTime,
-                        entry.duration,
-                        entry.totalCost,
-                        `"${entry.description}"`
-                    ];
-                    csv += row.join(',') + '\n';
-                });
-                
-                // Create and download CSV file
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `time_entries_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
             }
         }
         
