@@ -54,12 +54,21 @@
         .theme-toggle svg {
             width: 24px;
             height: 24px;
-            fill: #ffffff;
-            stroke: none;
-            transition: fill 0.3s ease;
+            stroke: #ffffff;
+            fill: none;
+            transition: stroke 0.3s ease;
         }
         
         body.light-mode .theme-toggle svg {
+            stroke: #000000;
+        }
+        
+        #moonIcon {
+            fill: #ffffff;
+            stroke: none;
+        }
+        
+        body.light-mode #moonIcon {
             fill: #000000;
         }
         
@@ -481,16 +490,16 @@
 <body>
     <!-- Theme Toggle -->
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 1 L13 6 L11 6 Z"/>
-            <path d="M12 23 L11 18 L13 18 Z"/>
-            <path d="M23 12 L18 11 L18 13 Z"/>
-            <path d="M1 12 L6 13 L6 11 Z"/>
-            <path d="M18.36 5.64 L14.83 8.17 L13.76 7.1 Z"/>
-            <path d="M5.64 18.36 L9.17 15.83 L10.24 16.9 Z"/>
-            <path d="M18.36 18.36 L15.83 15.83 L16.9 14.76 Z"/>
-            <path d="M5.64 5.64 L8.17 9.17 L7.1 10.24 Z"/>
+        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
         <svg id="moonIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
