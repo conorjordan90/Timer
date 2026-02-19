@@ -530,6 +530,12 @@
                 this.form.reset();
                 document.getElementById('modalDuration').textContent = '';
                 document.getElementById('modalCost').textContent = '';
+                
+                // Load last selected staff member
+                const lastStaffName = localStorage.getItem('lastStaffName');
+                if (lastStaffName) {
+                    document.getElementById('staffName').value = lastStaffName;
+                }
             }
             
             attachEventListeners() {
@@ -641,6 +647,12 @@
                 document.getElementById('modalDuration').textContent = duration;
                 document.getElementById('modalCost').textContent = cost.toFixed(2);
                 
+                // Load last selected staff member
+                const lastStaffName = localStorage.getItem('lastStaffName');
+                if (lastStaffName) {
+                    document.getElementById('staffName').value = lastStaffName;
+                }
+                
                 this.modal.classList.add('active');
             }
             
@@ -695,8 +707,13 @@
                     durationMs = this.elapsedTime;
                 }
 
+                const staffName = document.getElementById('staffName').value;
+                
+                // Save last selected staff member
+                localStorage.setItem('lastStaffName', staffName);
+                
                 const entry = {
-                    staffName: document.getElementById('staffName').value,
+                    staffName: staffName,
                     job: document.getElementById('job').value,
                     jobNumber: document.getElementById('jobNumber').value,
                     location: document.getElementById('location').value,
