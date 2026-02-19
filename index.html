@@ -23,6 +23,53 @@
             min-height: 100vh;
             margin: 0;
             background: #000000;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        body.light-mode {
+            background: #ffffff;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            padding: 0;
+            z-index: 100;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(20deg) scale(1.1);
+        }
+        
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: #ffffff;
+            transition: fill 0.3s ease;
+        }
+        
+        body.light-mode .theme-toggle {
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        body.light-mode .theme-toggle:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        body.light-mode .theme-toggle svg {
+            fill: #000000;
         }
         
         .timer-container {
@@ -31,6 +78,11 @@
             border-radius: 0;
             box-shadow: none;
             text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        
+        body.light-mode .timer-container {
+            background: #ffffff;
         }
         
         .timer-display {
@@ -40,11 +92,19 @@
             margin-bottom: 35px;
             font-variant-numeric: tabular-nums;
             letter-spacing: -2px;
-            transition: text-shadow 0.3s ease;
+            transition: text-shadow 0.3s ease, color 0.3s ease;
+        }
+        
+        body.light-mode .timer-display {
+            color: #000000;
         }
         
         .timer-display.running {
             animation: pulseGlow 3s ease-in-out infinite;
+        }
+        
+        body.light-mode .timer-display.running {
+            animation: pulseGlowLight 3s ease-in-out infinite;
         }
         
         @keyframes pulseGlow {
@@ -55,6 +115,17 @@
             50% {
                 text-shadow: 0 0 15px rgba(255, 255, 255, 0.35),
                              0 0 22px rgba(255, 255, 255, 0.2);
+            }
+        }
+        
+        @keyframes pulseGlowLight {
+            0%, 100% {
+                text-shadow: 0 0 10px rgba(0, 0, 0, 0.15),
+                             0 0 15px rgba(0, 0, 0, 0.08);
+            }
+            50% {
+                text-shadow: 0 0 15px rgba(0, 0, 0, 0.25),
+                             0 0 22px rgba(0, 0, 0, 0.15);
             }
         }
         
@@ -77,6 +148,35 @@
             color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+        
+        body.light-mode button {
+            border-color: rgba(0, 0, 0, 0.2);
+            color: #000000;
+        }
+        
+        body.light-mode .start-btn {
+            border-color: #10b981;
+            color: #10b981;
+        }
+        
+        body.light-mode .stop-btn {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        
+        body.light-mode .reset-btn {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        body.light-mode .manual-btn {
+            border-color: rgba(0, 0, 0, 0.2);
+            color: #000000;
+        }
+        
+        body.light-mode .manual-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
         }
         
         .start-btn {
@@ -388,6 +488,23 @@
     </style>
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg id="moonIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    </button>
         <!-- Recovery Modal -->
         <div class="modal" id="recoveryModal">
             <div class="modal-content confirm-content">
@@ -901,6 +1018,34 @@
         }
 
         checkAndRestoreTimer();
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        const body = document.body;
+        
+        // Load saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            body.classList.add('light-mode');
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            
+            if (body.classList.contains('light-mode')) {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+                localStorage.setItem('theme', 'light');
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
 
         // Register service worker for installability/app icon support
         if ('serviceWorker' in navigator) {
