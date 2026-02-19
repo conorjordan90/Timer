@@ -40,6 +40,24 @@
             margin-bottom: 35px;
             font-variant-numeric: tabular-nums;
             letter-spacing: -2px;
+            transition: text-shadow 0.3s ease;
+        }
+        
+        .timer-display.running {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% {
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.3),
+                             0 0 20px rgba(255, 255, 255, 0.2),
+                             0 0 30px rgba(255, 255, 255, 0.1);
+            }
+            50% {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
+                             0 0 30px rgba(255, 255, 255, 0.3),
+                             0 0 40px rgba(255, 255, 255, 0.2);
+            }
         }
         
         .controls {
@@ -561,6 +579,7 @@
                 this.isRunning = true;
                 this.startBtn.disabled = true;
                 this.stopBtn.disabled = false;
+                this.display.classList.add('running');
                 this.saveState();
             }
         }
@@ -572,6 +591,7 @@
                 this.sessionEndTime = new Date();
                 this.startBtn.disabled = false;
                 this.stopBtn.disabled = true;
+                this.display.classList.remove('running');
                 this.saveState();
                 // Show modal with calculated data
                 this.showModal();
@@ -598,6 +618,7 @@
                     this.isRunning = true;
                     this.startBtn.disabled = true;
                     this.stopBtn.disabled = false;
+                    this.display.classList.add('running');
                 }
             }
 
@@ -608,6 +629,7 @@
             this.sessionStartTime = null;
             this.sessionEndTime = null;
             this.display.textContent = '00:00:00';
+            this.display.classList.remove('running');
             this.startBtn.disabled = false;
             this.stopBtn.disabled = true;
             this.resetModal.classList.remove('active');
@@ -621,6 +643,7 @@
             this.sessionStartTime = null;
             this.sessionEndTime = null;
             this.display.textContent = '00:00:00';
+            this.display.classList.remove('running');
             this.startBtn.disabled = false;
             this.stopBtn.disabled = true;
             this.clearState();
@@ -858,6 +881,7 @@
             timer.timerInterval = setInterval(() => timer.update(), TIMER_UPDATE_INTERVAL);
             timer.startBtn.disabled = true;
             timer.stopBtn.disabled = false;
+            timer.display.classList.add('running');
             timer.saveState();
         }
 
