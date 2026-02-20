@@ -640,6 +640,9 @@
                 
                 this.attachEventListeners();
                 this.retryPendingEntries();
+                
+                // Request location permission on app load
+                this.requestLocationPermission();
             }
             
             // Save timer state to localStorage
@@ -964,6 +967,23 @@
                 const synced = pending.length - stillPending.length;
                 if (synced > 0) {
                     this.showToast(`✓ Synced ${synced} pending ${synced === 1 ? 'entry' : 'entries'}`, 'success');
+                }
+            }
+            
+            requestLocationPermission() {
+                // Request location permission on app load (silently, no capture yet)
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        () => {
+                            // Permission granted, but don't do anything with it yet
+                            console.log('Location permission granted');
+                        },
+                        () => {
+                            // Permission denied, but that's okay - manual entry still works
+                            console.log('Location permission denied');
+                        },
+                        { timeout: 5000, maximumAge: Infinity }
+                    );
                 }
             }
             
