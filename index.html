@@ -622,6 +622,7 @@
                 this.sessionStartTime = null;
                 this.sessionEndTime = null;
                 this.timeEntries = [];
+                this.currentLocation = null;
                 
                 this.display = document.getElementById('display');
                 this.startBtn = document.getElementById('startBtn');
@@ -712,6 +713,8 @@
                 this.stopBtn.disabled = true;
                 this.display.classList.remove('running');
                 this.saveState();
+                // Capture location before showing modal
+                this.captureLocation();
                 // Show modal with calculated data
                 this.showModal();
             }
@@ -793,6 +796,11 @@
                 const lastStaffName = localStorage.getItem('lastStaffName');
                 if (lastStaffName) {
                     document.getElementById('staffName').value = lastStaffName;
+                }
+                
+                // Auto-fill location if GPS captured it
+                if (this.currentLocation) {
+                    document.getElementById('location').value = this.currentLocation;
                 }
                 
                 this.modal.classList.add('active');
@@ -956,6 +964,89 @@
                 const synced = pending.length - stillPending.length;
                 if (synced > 0) {
                     this.showToast(`✓ Synced ${synced} pending ${synced === 1 ? 'entry' : 'entries'}`, 'success');
+                }
+            }
+            
+            captureLocation() {
+                // Reset location from previous session
+                this.currentLocation = null;
+                
+                // Check if geolocation is supported
+                if (!navigator.geolocation) {
+                    console.log('Geolocation not supported by browser');
+                    return;
+                }
+                
+                // Capture location (non-blocking, runs in background)
+                navigator.geolocation.getCurrentPosition(
+                    // Success callback
+                    (position) => {
+                        const lat = position.coords.latitude.toFixed(6);
+                        const lon = position.coords.longitude.toFixed(6);
+                        const accuracy = Math.round(position.coords.accuracy);
+                        
+                        // Try to get address via reverse geocoding
+                        this.reverseGeocode(lat, lon, accuracy);
+                    },
+                    // Error callback
+                    (error) => {
+                        // Silent fail - user will enter location manually
+                        console.log('Location capture failed:', error.message);
+                    },
+                    // Options
+                    {
+                        timeout: 5000,
+                        maximumAge: 60000, // Cache for 1 minute
+                        enableHighAccuracy: false // Balance accuracy vs speed
+                    }
+                );
+            }
+            
+            async reverseGeocode(lat, lon, accuracy) {
+                try {
+                    // Use free Nominatim API for reverse geocoding
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+                        {
+                            headers: {
+                                'User-Agent': 'TimerApp/1.0'
+                            }
+                        }
+                    );
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Try to extract useful address
+                        const address = data.address;
+                        let locationStr = '';
+                        
+                        if (address) {
+                            // Build a useful address string
+                            const parts = [];
+                            if (address.road) parts.push(address.road);
+                            if (address.suburb || address.village || address.town) {
+                                parts.push(address.suburb || address.village || address.town);
+                            }
+                            if (address.city) parts.push(address.city);
+                            
+                            locationStr = parts.join(', ') || data.display_name;
+                        } else {
+                            locationStr = data.display_name;
+                        }
+                        
+                        this.currentLocation = locationStr;
+                        
+                        // Update field if modal is already open
+                        if (this.modal.classList.contains('active')) {
+                            document.getElementById('location').value = locationStr;
+                        }
+                    } else {
+                        // Fallback to coordinates if geocoding fails
+                        this.currentLocation = `${lat}°, ${lon}° (±${accuracy}m)`;
+                    }
+                } catch (error) {
+                    // Fallback to coordinates
+                    this.currentLocation = `${lat}°, ${lon}° (±${accuracy}m)`;
                 }
             }
             
