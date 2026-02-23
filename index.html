@@ -618,6 +618,7 @@
                 this.elapsedTime = 0;
                 this.timerInterval = null;
                 this.isRunning = false;
+                this.isPaused = false;
                 this.wasRunningBeforeReset = false;
                 this.sessionStartTime = null;
                 this.sessionEndTime = null;
@@ -648,6 +649,7 @@
                     startTime: this.startTime,
                     elapsedTime: this.elapsedTime,
                     isRunning: this.isRunning,
+                    isPaused: this.isPaused,
                     lastSaved: Date.now(),
                     sessionStartTime: this.sessionStartTime ? this.sessionStartTime.toISOString() : null,
                     sessionEndTime: this.sessionEndTime ? this.sessionEndTime.toISOString() : null
@@ -691,25 +693,51 @@
             
         start() {
             if (!this.isRunning) {
+                // Starting from stopped
                 this.startTime = Date.now() - this.elapsedTime;
                 if (this.elapsedTime === 0) {
                     this.sessionStartTime = new Date();
                 }
                 this.timerInterval = setInterval(() => this.update(), TIMER_UPDATE_INTERVAL);
                 this.isRunning = true;
-                this.startBtn.disabled = true;
+                this.isPaused = false;
+                this.startBtn.textContent = 'PAUSE';
+                this.startBtn.classList.remove('start-btn');
+                this.startBtn.classList.add('reset-btn');
                 this.stopBtn.disabled = false;
+                this.display.classList.add('running');
+                this.saveState();
+            } else if (!this.isPaused) {
+                // Pausing
+                clearInterval(this.timerInterval);
+                this.isPaused = true;
+                this.startBtn.textContent = 'RESUME';
+                this.startBtn.classList.remove('reset-btn');
+                this.startBtn.classList.add('start-btn');
+                this.display.classList.remove('running');
+                this.saveState();
+            } else {
+                // Resuming
+                this.startTime = Date.now() - this.elapsedTime;
+                this.timerInterval = setInterval(() => this.update(), TIMER_UPDATE_INTERVAL);
+                this.isPaused = false;
+                this.startBtn.textContent = 'PAUSE';
+                this.startBtn.classList.remove('start-btn');
+                this.startBtn.classList.add('reset-btn');
                 this.display.classList.add('running');
                 this.saveState();
             }
         }
             
         stop() {
-            if (this.isRunning) {
+            if (this.isRunning || this.isPaused) {
                 clearInterval(this.timerInterval);
                 this.isRunning = false;
+                this.isPaused = false;
                 this.sessionEndTime = new Date();
-                this.startBtn.disabled = false;
+                this.startBtn.textContent = 'START';
+                this.startBtn.classList.remove('reset-btn');
+                this.startBtn.classList.add('start-btn');
                 this.stopBtn.disabled = true;
                 this.display.classList.remove('running');
                 this.saveState();
@@ -747,12 +775,15 @@
         confirmReset() {
             if (this.timerInterval) clearInterval(this.timerInterval);
             this.isRunning = false;
+            this.isPaused = false;
             this.elapsedTime = 0;
             this.sessionStartTime = null;
             this.sessionEndTime = null;
             this.display.textContent = '00:00:00';
             this.display.classList.remove('running');
-            this.startBtn.disabled = false;
+            this.startBtn.textContent = 'START';
+            this.startBtn.classList.remove('reset-btn');
+            this.startBtn.classList.add('start-btn');
             this.stopBtn.disabled = true;
             this.resetModal.classList.remove('active');
             this.clearState();
@@ -1079,16 +1110,33 @@
 
         function restoreTimerFromState(timer, saved) {
             const now = Date.now();
-            const gap = now - saved.lastSaved;
-            const newElapsed = saved.elapsedTime + gap;
-            timer.startTime = now - newElapsed;
-            timer.elapsedTime = newElapsed;
-            timer.isRunning = true;
             timer.sessionStartTime = saved.sessionStartTime ? new Date(saved.sessionStartTime) : new Date(saved.startTime);
-            timer.timerInterval = setInterval(() => timer.update(), TIMER_UPDATE_INTERVAL);
-            timer.startBtn.disabled = true;
-            timer.stopBtn.disabled = false;
-            timer.display.classList.add('running');
+            
+            if (saved.isPaused) {
+                // Restore paused state
+                timer.elapsedTime = saved.elapsedTime;
+                timer.isRunning = true;
+                timer.isPaused = true;
+                timer.startBtn.textContent = 'RESUME';
+                timer.startBtn.classList.remove('reset-btn');
+                timer.startBtn.classList.add('start-btn');
+                timer.stopBtn.disabled = false;
+                timer.update();
+            } else {
+                // Restore running state
+                const gap = now - saved.lastSaved;
+                const newElapsed = saved.elapsedTime + gap;
+                timer.startTime = now - newElapsed;
+                timer.elapsedTime = newElapsed;
+                timer.isRunning = true;
+                timer.isPaused = false;
+                timer.timerInterval = setInterval(() => timer.update(), TIMER_UPDATE_INTERVAL);
+                timer.startBtn.textContent = 'PAUSE';
+                timer.startBtn.classList.remove('start-btn');
+                timer.startBtn.classList.add('reset-btn');
+                timer.stopBtn.disabled = false;
+                timer.display.classList.add('running');
+            }
             timer.saveState();
         }
 
