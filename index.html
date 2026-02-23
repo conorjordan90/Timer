@@ -216,6 +216,22 @@
             transform: scale(1.05);
         }
         
+        .pause-btn {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        
+        .pause-btn:hover {
+            background: #f59e0b;
+            color: #000000;
+            transform: scale(1.05);
+        }
+        
+        body.light-mode .pause-btn {
+            border-color: #d97706;
+            color: #d97706;
+        }
+        
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -703,7 +719,7 @@
                 this.isPaused = false;
                 this.startBtn.textContent = 'PAUSE';
                 this.startBtn.classList.remove('start-btn');
-                this.startBtn.classList.add('reset-btn');
+                this.startBtn.classList.add('pause-btn');
                 this.stopBtn.disabled = false;
                 this.display.classList.add('running');
                 this.saveState();
@@ -712,7 +728,7 @@
                 clearInterval(this.timerInterval);
                 this.isPaused = true;
                 this.startBtn.textContent = 'RESUME';
-                this.startBtn.classList.remove('reset-btn');
+                this.startBtn.classList.remove('pause-btn');
                 this.startBtn.classList.add('start-btn');
                 this.display.classList.remove('running');
                 this.saveState();
@@ -723,7 +739,7 @@
                 this.isPaused = false;
                 this.startBtn.textContent = 'PAUSE';
                 this.startBtn.classList.remove('start-btn');
-                this.startBtn.classList.add('reset-btn');
+                this.startBtn.classList.add('pause-btn');
                 this.display.classList.add('running');
                 this.saveState();
             }
@@ -736,7 +752,7 @@
                 this.isPaused = false;
                 this.sessionEndTime = new Date();
                 this.startBtn.textContent = 'START';
-                this.startBtn.classList.remove('reset-btn');
+                this.startBtn.classList.remove('pause-btn');
                 this.startBtn.classList.add('start-btn');
                 this.stopBtn.disabled = true;
                 this.display.classList.remove('running');
@@ -782,7 +798,7 @@
             this.display.textContent = '00:00:00';
             this.display.classList.remove('running');
             this.startBtn.textContent = 'START';
-            this.startBtn.classList.remove('reset-btn');
+            this.startBtn.classList.remove('pause-btn');
             this.startBtn.classList.add('start-btn');
             this.stopBtn.disabled = true;
             this.resetModal.classList.remove('active');
@@ -1133,7 +1149,7 @@
                 timer.timerInterval = setInterval(() => timer.update(), TIMER_UPDATE_INTERVAL);
                 timer.startBtn.textContent = 'PAUSE';
                 timer.startBtn.classList.remove('start-btn');
-                timer.startBtn.classList.add('reset-btn');
+                timer.startBtn.classList.add('pause-btn');
                 timer.stopBtn.disabled = false;
                 timer.display.classList.add('running');
             }
